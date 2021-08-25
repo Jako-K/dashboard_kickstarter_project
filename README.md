@@ -1,3 +1,5 @@
+`Python`, `Pandas`, `Plotly`, `Plotly`, `Dash`, `Big Data`, `Data Cleaning`, `Data Visualizations`, `Basic Statistics`
+
 # Kickstarter 2010-2017 - Interactive Dashboard
 
 <br>
