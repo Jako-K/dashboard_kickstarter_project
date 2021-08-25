@@ -1,4 +1,4 @@
-# Interactive Dashboard
+# Kickstarter 2010-2017 - Interactive Dashboard
 
 <br>
 <p align="center"> <img src="./readme_res/demo.png" alt="Drawing"/> </p>
@@ -25,8 +25,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 import plotly.io as pio
 
-# All around
-import utilsm.helpers as H
+from country_converter import country_converter
+import numpy as np
 import pandas as pd
 
 # Import settings
@@ -98,13 +98,15 @@ fig_ks_count = px.bar(
     y="launches per year",
     color="state",
     barmode="group",
-    category_orders={}
+    opacity=0.87
 )
+fig_ks_count
+
 ```
 
-<br>
-<p align="center"> <img src="./readme_res/fig1.png" alt="Drawing"/> </p>
-<br>
+<p align="center">
+    <img src="./readme_res/fig1.png"/>
+</p>
 
 ## 2.2) Figure: Money pledged per year
 
@@ -115,65 +117,91 @@ median = df.groupby("year").median().reset_index()
 maximum = df.groupby("year").max().reset_index()
 
 fig_money = go.Figure()
-fig_money.add_trace(go.Scatter(
-    x=mean["year"],
-    y=mean["usd_goal_real"],
-    name="Average"
-))
 
 fig_money.add_trace(go.Scatter(
     x=median["year"],
     y=median["usd_goal_real"],
-    name="Median"
+    name="Median",
+    fill="tozeroy",
+    mode='lines',
+    opacity=0.87
+))
+
+fig_money.add_trace(go.Scatter(
+    x=mean["year"],
+    y=mean["usd_goal_real"],
+    name="Average",
+    fill="tonexty",
+    mode='lines',
+    opacity=0.87
 ))
 
 fig_money.add_trace(go.Scatter(
     x=maximum["year"],
     y=maximum["usd_goal_real"],
-    name="Maximum"
+    name="Maximum",
+    fill="tonexty",
+    mode='lines',
+    opacity=0.87
 ))
 
-fig_money.update_yaxes(type="log");
+fig_money.update_yaxes(type="log")
 ```
 
-
-​    
-
-<br>
-<p align="center"> <img src="./readme_res/fig2.png" alt="Drawing"/> </p>
-<br>
+<p align="center">
+    <img src="./readme_res/fig2.png"/>
+</p>
 
 ## 2.3) Figure: 10 Most popular categories
 
 
 ```python
 for_pie = df["main_category"].value_counts(normalize=True)[:10]
-fig_pie_category = px.pie(names=list(for_pie.keys()), values=for_pie.values.tolist())
-fig_pie_category.update_traces(textposition='inside', textinfo='percent+label')
+fig_pie_category = px.pie(
+    names=list(for_pie.keys()), 
+    values=for_pie.values.tolist(),
+    hole=0.5,
+    opacity=0.87
+)
+fig_pie_category.update_traces(textposition='outside', textinfo='percent+label')
 fig_pie_category.update_layout(showlegend=False);
+fig_pie_category
 ```
 
-<br>
-<p align="center"> <img src="./readme_res/fig3.png" alt="Drawing"/> </p>
-<br>
+<p align="center">
+    <img src="./readme_res/fig3.png"/>
+</p>
 
 ## 2.4) Figure: Money pledged per category
 
 
 ```python
 # Median and mean money spend in the 15 main categories
-median = df.groupby("main_category").median().sort_values("usd_pledged_real", ascending=False).reset_index()
-mean = df.groupby("main_category").mean().sort_values("usd_pledged_real", ascending=False).reset_index()
+median = df.groupby("main_category").median().\
+    sort_values("usd_pledged_real", ascending=False).reset_index()
+mean = df.groupby("main_category").mean().\
+    sort_values("usd_pledged_real", ascending=False).reset_index()
 
 fig_money_category = go.Figure()
-fig_money_category.add_trace(go.Bar(x=median["main_category"], y=median["usd_pledged_real"], name="Median"))
-fig_money_category.add_trace(go.Bar(x=mean["main_category"], y=mean["usd_pledged_real"], name="Average"))
+fig_money_category.add_trace(go.Bar(
+    x=median["main_category"], 
+    y=median["usd_pledged_real"], 
+    name="Median",
+    opacity=0.87
+))
+fig_money_category.add_trace(go.Bar(
+    x=mean["main_category"], 
+    y=mean["usd_pledged_real"], 
+    name="Median",
+    opacity=0.87
+))
 fig_money_category.update_yaxes(type="log");
+fig_money_category
 ```
 
-<br>
-<p align="center"> <img src="./readme_res/fig4.png" alt="Drawing"/> </p>
-<br>
+<p align="center">
+    <img src="./readme_res/fig4.png"/>
+</p>
 
 ## 2.5) Figure: Succes rate per category
 
@@ -212,34 +240,55 @@ fig_success_rate = px.bar(
     x="success rate",
     color="state",
     orientation='h',
+    opacity=0.87,
 )
+fig_success_rate
 ```
 
-<br>
-<p align="center"> <img src="./readme_res/fig5.png" alt="Drawing"/> </p>
-<br>
+<p align="center">
+    <img src="./readme_res/fig5.png"/>
+</p>
 
 ## 2.6) Figure: Launches per country
 
 
 ```python
 for_map = df.country.value_counts()
+
+# Format countries correctly
 for_map = pd.DataFrame({"iso_alpha2":list(for_map.index), "value":list(for_map.values)})
 for_map = for_map[for_map["iso_alpha2"] != "unknown"] # Remove country category `unknown`, I see no other solution
-for_map["iso_alpha3"] = [H.country_converter.alpha2_to_alpha3[c] for c in for_map["iso_alpha2"]] # Plotly expects
-for_map["country"] = [H.country_converter.alpha2_to_country[c] for c in for_map["iso_alpha2"]] # Human readable
-fig_map = px.choropleth(for_map, color="value", locations="iso_alpha3",
-                        scope="world", color_continuous_scale=px.colors.sequential.Teal)
+for_map["iso_alpha3"] = [country_converter.alpha2_to_alpha3[c] for c in for_map["iso_alpha2"]] # Plotly expects
+for_map["country"] = [country_converter.alpha2_to_country[c] for c in for_map["iso_alpha2"]] # Human readable
 
-fig_map.update_layout(
-    geo=dict( showframe=False, projection_type='equirectangular'),
-    annotations = [dict(x=0.55, y=0.1, xref='paper', yref='paper', showarrow = False)]
-);
+# Divide each contry into 5 groups for better viz.
+thresholds = [1000, 3000, 5000, 10000, 50000]
+for_map["Launches"] = np.digitize(for_map["value"], thresholds)
+
+names = {0:"1-1000", 
+ 1:"1001-3000", 
+ 2:"3001-5000", 
+ 3:"5001-10,000", 
+ 4:"10,001-50,000", 
+ 5:"50,001 and higher"}
+
+for_map["Launches"] = for_map.apply( lambda row: names[row["Launches"]], axis=1)
+colorscale = ["#ebf3fb", "#c6dbef", "#85bcdb", "#4292c6", "#1361a9", "#08306b"]#["#f7fbff", "#d2e3f3", "#9ecae1", "#57a0ce", "#2171b5", "#0b4083"]#
+endpts = [1_000, 3_000, 5_000, 10_000, 50_000]
+color_discrete_map = {names[i]:colorscale[i] for i in range(6)}
+
+fig_map = px.choropleth(
+            for_map, 
+            color="Launches",
+            locations="iso_alpha3", 
+            scope="world",
+            color_discrete_map = color_discrete_map)
+fig_map.update_geos(fitbounds="locations")
 ```
 
-<br>
-<p align="center"> <img src="./readme_res/fig6.png" alt="Drawing"/> </p>
-<br>
+<p align="center">
+    <img src="./readme_res/fig6.png"/>
+</p>
 
 # 3.) Create dashboard app
 
@@ -247,11 +296,11 @@ fig_map.update_layout(
 
 
 ```python
-# These are just to make it all a bit more manageable. 
+# These are just here to make it all a bit more manageable. 
 # App layout can be a bit unwielding otherwise due to all the brackets and parentheses.
 
 def get_overview_card(text, title, color, icon):
-    card_icon = {"color": "white", "textAlign": "center", 'fontSize': 50, "margin": "auto"}
+    card_icon = {"color": "white", "textAlign": "center", 'fontSize': 50, "margin": "auto", "opacity":0.9}
     return dbc.Col(width=3, children=[
         dbc.CardGroup([
             dbc.Card([
@@ -273,8 +322,6 @@ def get_fig(fig, width, title="asd"):
             dbc.Card(dbc.CardBody([html.H4(title, className="card-title"), dcc.Graph(figure=fig)])),
         ], className="mt-4 shadow")
     ])
-
-
 ```
 
 ## 3.2) Figure titles and key stats
@@ -292,7 +339,6 @@ text3 = f"{format(sum(df.backers), ',')}"
 
 title4 = "Pledges"
 text4 = f"{format(round(sum(df.usd_pledged_real)), ',')}$"
-
 
 # Figure text
 fig_map_title = "Launches - country"
@@ -356,12 +402,5 @@ app.layout = html.Div(
 )
 
 # Launch app locally
-app.run_server()
+app.run_server(debug=False)
 ```
-
-    Dash app running on http://127.0.0.1:8050/
-
-
-<br>
-<p align="center"> <img src="./readme_res/demo.png" alt="Drawing"/> </p>
-<br>
